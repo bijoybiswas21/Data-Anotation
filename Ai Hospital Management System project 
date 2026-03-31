@@ -1,0 +1,154 @@
+import json
+import os
+from datetime import datetime
+
+FILE_NAME = "patients.json"
+
+def load_patients():
+    if os.path.exists(FILE_NAME):
+        with open(FILE_NAME, "r") as f:
+            return json.load(f)
+    return []
+
+def save_patients(patients):
+    with open(FILE_NAME, "w") as f:
+        json.dump(patients, f, indent=4)
+
+def generate_id(patients):
+    if not patients:
+        return "P001"
+    last_id = max(int(p["id"][1:]) for p in patients)
+    return f"P{last_id + 1:03d}"
+
+def add_patient():
+    patients = load_patients()
+    print("\n--- Add Patient ---")
+    name = input("Enter patient name: ").strip()
+    age = input("Enter age: ").strip()
+    gender = input("Enter gender (M/F/Other): ").strip()
+    disease = input("Enter disease/diagnosis: ").strip()
+    doctor = input("Enter assigned doctor: ").strip()
+    phone = input("Enter phone number: ").strip()
+
+    patient = {
+        "id": generate_id(patients),
+        "name": name,
+        "age": age,
+        "gender": gender,
+        "disease": disease,
+        "doctor": doctor,
+        "phone": phone,
+        "admitted_on": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    patients.append(patient)
+    save_patients(patients)
+    print(f"\n✅ Patient '{name}' added successfully with ID: {patient['id']}")
+
+def view_patients():
+    patients = load_patients()
+    print("\n--- All Patients ---")
+    if not patients:
+        print("No patients found.")
+        return
+    print(f"{'ID':<8} {'Name':<20} {'Age':<5} {'Gender':<8} {'Disease':<20} {'Doctor':<20} {'Phone':<15} {'Admitted On'}")
+    print("-" * 110)
+    for p in patients:
+        print(f"{p['id']:<8} {p['name']:<20} {p['age']:<5} {p['gender']:<8} {p['disease']:<20} {p['doctor']:<20} {p['phone']:<15} {p['admitted_on']}")
+
+def search_patient():
+    patients = load_patients()
+    print("\n--- Search Patient ---")
+    keyword = input("Enter patient ID or name to search: ").strip().lower()
+    results = [p for p in patients if keyword in p["id"].lower() or keyword in p["name"].lower()]
+    if not results:
+        print("❌ No matching patient found.")
+        return
+    print(f"\nFound {len(results)} result(s):\n")
+    for p in results:
+        print_patient(p)
+
+def update_patient():
+    patients = load_patients()
+    print("\n--- Update Patient ---")
+    pid = input("Enter Patient ID to update: ").strip().upper()
+    for i, p in enumerate(patients):
+        if p["id"] == pid:
+            print(f"\nCurrent details: {p}")
+            print("\nEnter new values (press Enter to keep current):")
+            name = input(f"Name [{p['name']}]: ").strip() or p["name"]
+            age = input(f"Age [{p['age']}]: ").strip() or p["age"]
+            gender = input(f"Gender [{p['gender']}]: ").strip() or p["gender"]
+            disease = input(f"Disease [{p['disease']}]: ").strip() or p["disease"]
+            doctor = input(f"Doctor [{p['doctor']}]: ").strip() or p["doctor"]
+            phone = input(f"Phone [{p['phone']}]: ").strip() or p["phone"]
+
+            patients[i].update({
+                "name": name, "age": age, "gender": gender,
+                "disease": disease, "doctor": doctor, "phone": phone
+            })
+            save_patients(patients)
+            print(f"\n✅ Patient {pid} updated successfully.")
+            return
+    print("❌ Patient ID not found.")
+
+def delete_patient():
+    patients = load_patients()
+    print("\n--- Delete Patient ---")
+    pid = input("Enter Patient ID to delete: ").strip().upper()
+    for p in patients:
+        if p["id"] == pid:
+            confirm = input(f"Are you sure you want to delete '{p['name']}' (ID: {pid})? (yes/no): ").strip().lower()
+            if confirm == "yes":
+                patients.remove(p)
+                save_patients(patients)
+                print(f"✅ Patient {pid} deleted successfully.")
+            else:
+                print("Deletion cancelled.")
+            return
+    print("❌ Patient ID not found.")
+
+def print_patient(p):
+    print(f"""
+  ID         : {p['id']}
+  Name       : {p['name']}
+  Age        : {p['age']}
+  Gender     : {p['gender']}
+  Disease    : {p['disease']}
+  Doctor     : {p['doctor']}
+  Phone      : {p['phone']}
+  Admitted On: {p['admitted_on']}
+  {'-'*40}""")
+
+def main():
+    print("=" * 45)
+    print("   🏥 Hospital Management System")
+    print("=" * 45)
+    while True:
+        print("\nMain Menu:")
+        print("  1. Add Patient")
+        print("  2. View All Patients")
+        print("  3. Search Patient")
+        print("  4. Update Patient")
+        print("  5. Delete Patient")
+        print("  6. Exit")
+        choice = input("\nEnter your choice (1-6): ").strip()
+
+        if choice == "1":
+            add_patient()
+        elif choice == "2":
+            view_patients()
+        elif choice == "3":
+            search_patient()
+        elif choice == "4":
+            update_patient()
+        elif choice == "5":
+            delete_patient()
+        elif choice == "6":
+            print("\nGoodbye! 👋")
+            break
+        else:
+            print("❌ Invalid choice. Please enter 1-6.")
+
+if __name__ == "__main__":
+    main()
